@@ -54,12 +54,15 @@ gcloud services enable iam.googleapis.com cloudresourcemanager.googleapis.com st
   --project="${CUSTOMER_PROJECT_ID}"
 
 echo "[2/5] Creating the read-only service account..."
-gcloud iam service-accounts create "${SERVICE_ACCOUNT_NAME}" \
-  --project="${CUSTOMER_PROJECT_ID}" \
-  --display-name="DSPM Read-Only GCS Discovery" \
-  || echo "    (service account already exists, continuing)"
-# a new service account takes a few seconds to be visible to IAM; granting on it sooner can fail
-sleep 10
+if gcloud iam service-accounts describe "${SERVICE_ACCOUNT_EMAIL}" --project="${CUSTOMER_PROJECT_ID}" >/dev/null 2>&1; then
+  echo "    (service account already exists, continuing)"
+else
+  gcloud iam service-accounts create "${SERVICE_ACCOUNT_NAME}" \
+    --project="${CUSTOMER_PROJECT_ID}" \
+    --display-name="DSPM Read-Only GCS Discovery"
+  # a new service account takes a few seconds to be visible to IAM; granting on it sooner can fail
+  sleep 10
+fi
 
 echo "[3/5] Creating or updating the read-only custom role..."
 if gcloud iam roles describe "${CUSTOM_ROLE_ID}" --project="${CUSTOMER_PROJECT_ID}" >/dev/null 2>&1; then
